@@ -1,6 +1,7 @@
 {
   "projects": {
-    "testing": "wugamessg"
+    "testing": "wugamessg",
+    "default": "wugamessg"
   },
   "targets": {},
   "etags": {}
