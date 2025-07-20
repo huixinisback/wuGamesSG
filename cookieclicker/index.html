@@ -1,29 +1,250 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creepy Cookie Clicker</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background: #add8e6; /* Stage 1 cheerful blue */
+        transition: background 1s;
+    }
 
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <title>Cookie Clicker</title>
+    #game-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        padding: 20px;
+        text-align: center;
+    }
 
-        <style>
-            html, body {
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            #renderCanvas {
-                width: 100%;
-                height: 100%;
-                touch-action: none;
-            }
-        </style>
-    </head>
+    #cookie {
+        width: 150px;
+        height: 150px;
+        background: url('assets/cookie_1.png') no-repeat center/cover;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
 
-   <body>
+    #cookie:active {
+        transform: scale(0.95);
+    }
 
-    <script src="cookieclicker.js"></script>
-   </body>
+    #clicks {
+        font-size: 24px;
+        margin-top: 20px;
+    }
 
+    #dialogue, #choices, #tools {
+        margin-top: 20px;
+        display: none;
+    }
+
+    button.choice {
+        display: block;
+        margin: 8px auto;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    /* Google Ads placement */
+    #ad-container {
+        width: 100%;
+        text-align: center;
+        background: #f4f4f4;
+        padding: 10px;
+        position: fixed;
+        bottom: 0;
+    }
+
+    @media (min-width: 768px) {
+        body {
+            flex-direction: row;
+        }
+        #game-container {
+            flex: 3;
+        }
+        #ad-container {
+            width: 300px;
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100%;
+            background: #f4f4f4;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="cookie"></div>
+    <div id="clicks">Clicks: 0</div>
+    <div id="dialogue"></div>
+    <div id="choices"></div>
+    <div id="tools"></div>
+</div>
+
+<!-- Google Ads placeholder -->
+<div id="ad-container">
+    <!-- Google AdSense Code goes here -->
+    <p>Ad Placeholder</p>
+</div>
+
+<script>
+// ====== GAME STATE ======
+let clicks = 0;
+let stage = 1;
+let flags = {
+    aggressiveClicker: false,
+    calmPlayer: false,
+    observant: false,
+    desensitized: false,
+    darkChoice1: false,
+    neutralChoice: false,
+    whimsy: false,
+    reflectionClick: false,
+    darkAcceptance: false,
+    ritualUser: false,
+    autoToolUse: false
+};
+let clickTimestamps = [];
+let dialogueActive = false;
+
+// ====== ELEMENTS ======
+const cookieEl = document.getElementById('cookie');
+const clicksEl = document.getElementById('clicks');
+const dialogueEl = document.getElementById('dialogue');
+const choicesEl = document.getElementById('choices');
+const toolsEl = document.getElementById('tools');
+
+// ====== STAGE THRESHOLDS ======
+const thresholds = {
+    1: 2**10,
+    2: 2**12,
+    3: 2**14,
+    4: 2**16,
+    5: 2**18,
+    6: 2**20
+};
+
+// ====== CLICK LOGIC ======
+cookieEl.addEventListener('click', () => {
+    clicks++;
+    clicksEl.textContent = `Clicks: ${clicks}`;
+    trackAggression();
+
+    checkStage();
+});
+
+function trackAggression() {
+    const now = Date.now();
+    clickTimestamps.push(now);
+    if (clickTimestamps.length > 10) clickTimestamps.shift();
+    if (clickTimestamps.length >= 10) {
+        const speed = clickTimestamps[9] - clickTimestamps[0];
+        if (speed < 2000) flags.aggressiveClicker = true;
+    }
+}
+
+// ====== STAGE PROGRESSION ======
+function checkStage() {
+    if (clicks >= thresholds[stage] && stage < 6) {
+        stage++;
+        updateStage();
+    } else if (clicks >= thresholds[6]) {
+        triggerEnding();
+    }
+}
+
+function updateStage() {
+    switch(stage) {
+        case 2:
+            document.body.style.background = '#c0d6e4'; // Slightly washed out
+            cookieEl.style.backgroundImage = "url('assets/cookie_2.png')";
+            break;
+        case 3:
+            document.body.style.background = '#b0c4de';
+            cookieEl.style.backgroundImage = "url('assets/cookie_3.png')";
+            triggerDialogueStage3();
+            break;
+        case 4:
+            document.body.style.background = '#a9a9a9';
+            cookieEl.style.backgroundImage = "url('assets/cookie_4.png')";
+            break;
+        case 5:
+            document.body.style.background = '#5a1a1a'; // Ritual red glow
+            cookieEl.style.backgroundImage = "url('assets/cookie_5.png')";
+            unlockTools();
+            break;
+    }
+}
+
+// ====== DIALOGUES ======
+function triggerDialogueStage3() {
+    dialogueActive = true;
+    dialogueEl.style.display = 'block';
+    dialogueEl.textContent = "What flavour is friendship?";
+    choicesEl.style.display = 'block';
+    choicesEl.innerHTML = `
+        <button class="choice" data-choice="dark">The taste of my friends</button>
+        <button class="choice" data-choice="neutral">The idea of my friend</button>
+        <button class="choice" data-choice="whimsy">Idk, my little pony things man</button>
+    `;
+    document.querySelectorAll('.choice').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const choice = e.target.getAttribute('data-choice');
+            if (choice === 'dark') flags.darkChoice1 = true;
+            if (choice === 'neutral') flags.neutralChoice = true;
+            if (choice === 'whimsy') flags.whimsy = true;
+            dialogueEl.style.display = 'none';
+            choicesEl.style.display = 'none';
+            dialogueActive = false;
+        });
+    });
+}
+
+// ====== TOOLS ======
+function unlockTools() {
+    toolsEl.style.display = 'block';
+    toolsEl.innerHTML = `
+        <button id="spatula">Spatula</button>
+        <button id="mixer">Mixer</button>
+        <button id="knife">Knife</button>
+        <button id="wand">Magic Wand</button>
+    `;
+    document.getElementById('knife').addEventListener('click', () => {
+        flags.ritualUser = true;
+        alert('"It hurts..."');
+    });
+    document.getElementById('wand').addEventListener('click', () => {
+        flags.ritualUser = true;
+        alert('"Wake up... please"');
+    });
+}
+
+// ====== ENDINGS ======
+function triggerEnding() {
+    let ending = "Void Loop";
+    if (flags.darkChoice1 && flags.aggressiveClicker) ending = "The Feast";
+    else if (flags.ritualUser) ending = "The Offering";
+    else if (flags.neutralChoice && !flags.ritualUser) ending = "The Observer";
+    else if (flags.reflectionClick) ending = "Reflection";
+    else if (flags.whimsy && !flags.autoToolUse) ending = "The Escape";
+
+    alert(`Ending Reached: ${ending}`);
+    // Add cutscene animations or transitions here
+}
+</script>
+</body>
 </html>

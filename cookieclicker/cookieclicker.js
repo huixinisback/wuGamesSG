@@ -19,10 +19,6 @@ function draw() {
   imageMode(CENTER);
   image(spriteImg, circleX, circleY, radius * 2, radius * 2);
 
-  // Optional: draw a circle for visual reference
-  noFill();
-  stroke(0);
-  ellipse(circleX, circleY, radius * 2);
 }
 
 function mousePressed() {
@@ -31,3 +27,4 @@ function mousePressed() {
     console.log("Sprite clicked!");
   }
 }
+
