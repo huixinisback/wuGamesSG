@@ -80,6 +80,28 @@
 </div>
 
 <script>
+// ====== COOKIE HELPERS ======
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = `${name}=${value || ""}${expires}; path=/`;
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
 // ====== GAME STATE ======
 let clicks = 0;
 let stage = 1;
@@ -116,6 +138,23 @@ const thresholds = {
     6: 2**20
 };
 
+// ====== LOAD SAVED STATE ======
+const savedState = getCookie('gameState');
+if (savedState) {
+    try {
+        const data = JSON.parse(savedState);
+        clicks = data.clicks || 0;
+        stage = data.stage || 1;
+        flags = data.flags || flags;
+    } catch (e) {
+        console.error("Error parsing saved game data:", e);
+    }
+}
+
+// Update UI with restored clicks and stage
+clicksEl.textContent = `Clicks: ${clicks}`;
+updateStage(); // Apply correct background and cookie image
+
 // ====== CLICK LOGIC ======
 cookieEl.addEventListener('click', () => {
     clicks++;
@@ -123,6 +162,7 @@ cookieEl.addEventListener('click', () => {
     trackAggression();
 
     checkStage();
+    saveGame();
 });
 
 function trackAggression() {
@@ -147,21 +187,25 @@ function checkStage() {
 
 function updateStage() {
     switch(stage) {
+        case 1:
+            document.body.style.background = '#add8e6';
+            cookieEl.style.backgroundImage = "url('assets/cookie_1.png')";
+            break;
         case 2:
-            document.body.style.background = '#c0d6e4'; // Slightly washed out
+            document.body.style.background = '#c0d6e4'; 
             cookieEl.style.backgroundImage = "url('assets/cookie_2.png')";
             break;
         case 3:
             document.body.style.background = '#b0c4de';
             cookieEl.style.backgroundImage = "url('assets/cookie_3.png')";
-            triggerDialogueStage3();
+            if (!dialogueActive) triggerDialogueStage3();
             break;
         case 4:
             document.body.style.background = '#a9a9a9';
             cookieEl.style.backgroundImage = "url('assets/cookie_4.png')";
             break;
         case 5:
-            document.body.style.background = '#5a1a1a'; // Ritual red glow
+            document.body.style.background = '#5a1a1a';
             cookieEl.style.backgroundImage = "url('assets/cookie_5.png')";
             unlockTools();
             break;
@@ -188,6 +232,7 @@ function triggerDialogueStage3() {
             dialogueEl.style.display = 'none';
             choicesEl.style.display = 'none';
             dialogueActive = false;
+            saveGame();
         });
     });
 }
@@ -204,11 +249,23 @@ function unlockTools() {
     document.getElementById('knife').addEventListener('click', () => {
         flags.ritualUser = true;
         alert('"It hurts..."');
+        saveGame();
     });
     document.getElementById('wand').addEventListener('click', () => {
         flags.ritualUser = true;
         alert('"Wake up... please"');
+        saveGame();
     });
+}
+
+// ====== SAVE GAME ======
+function saveGame() {
+    const gameState = {
+        clicks: clicks,
+        stage: stage,
+        flags: flags
+    };
+    setCookie('gameState', JSON.stringify(gameState), 7);
 }
 
 // ====== ENDINGS ======
@@ -221,8 +278,10 @@ function triggerEnding() {
     else if (flags.whimsy && !flags.autoToolUse) ending = "The Escape";
 
     alert(`Ending Reached: ${ending}`);
-    // Add cutscene animations or transitions here
+    // Reset the game if needed
+    document.cookie = "gameState=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 </script>
+
 </body>
 </html>
